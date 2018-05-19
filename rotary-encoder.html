@@ -1,0 +1,25 @@
+<html>
+    <head>
+        <title>Rotary Encoder Diagram</title>
+        <link href="style.css" rel="stylesheet" type="text/css" />
+    </head>
+
+    <body>
+        <h1>Rotary Encoder Diagram</h1>
+        <div id="canvas-wrapper-left">
+            <canvas id="rotary" width="500" height="500"></canvas>
+        </div>
+
+        <div id="controls-wrapper">
+            Number of Bits in Encoder:<br /> 
+            <button type="button" class="enabledColor" id="decreaseButton"><</button>
+            <span id="bitCountLabel">3</span>
+            <button type="button" class="enabledColor" id="increaseButton">></button>
+
+            <p>Possible Values: 0-<span id="totalValuesLabel">7</span></p>
+            <p>Angular Resolution: <span id="angularResolutionLabel">42</span>&deg;</p>
+        </div>
+
+        <script src="rotary-encoder.js"></script>
+    </body>
+</html>
