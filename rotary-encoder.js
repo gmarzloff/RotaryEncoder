@@ -12,96 +12,110 @@ canvas.context = canvas.getContext("2d");
 
 class RotaryEncoder {
     constructor(bitsize=3, sizefactor=0.8){
-        this.radius = Math.min.apply(null,[window.canvas.width, window.canvas.height])/2 * sizefactor;
+        this.radius = Math.min.apply(null,[canvas.width, canvas.height])/2 * sizefactor;
         this.bitsize = bitsize;
-        this.center = {x: window.canvas.width/2, y: window.canvas.height/2};
+        this.center = {x: canvas.width/2, y: canvas.height/2};
         this.axleRadius = 20;
         this.rodTheta = 0.0;
 
         this.fps = 24;
-        this.revolutionPeriod = 4.0; // seconds 
-        this.updateInterval = 1.0 / this.fps ;
-        this.d_theta = 360 / (this.fps * this.revolutionPeriod);
+        this.revolutionPeriod = 5.0; // seconds 
+        this.updateInterval = 1000 / this.fps ;
+        this.d_theta = 2*Math.PI / (this.fps * this.revolutionPeriod);
     }
     get totalValues() {
         return Math.pow(2,this.bitsize);
     }
 
-    //drawSegment(drawing context, decimalNumber, bitPosition, fill? true/false)
-    drawPartOfSlice(c, decNumber, bitPosition, shouldFill){
-        var arcAngle = 2 * Math.PI / this.totalValues;
-        
-        var innerArc = {
-            start: arcAngle * decNumber, 
-            end: arcAngle * (decNumber + 1), 
-            r: bitPosition/this.bitsize * this.radius 
-        };
-        
-        var outerArc = {
-            start: arcAngle * decNumber, 
-            end: arcAngle * (decNumber + 1), 
-            r: (bitPosition+1)/this.bitsize * this.radius 
-        };
-
-        
-        c.beginPath();
-        c.arc(this.center.x, this.center.y, innerArc.r, innerArc.start, innerArc.end);
-        c.arc(this.center.x, this.center.y, outerArc.r, outerArc.end, outerArc.start, true);
-        var pt = polarToCartesian(innerArc.r, innerArc.start);
-        c.lineTo(pt.x + this.center.x, pt.y + this.center.y);
-        
-        if(shouldFill){
-            c.fillStyle = "black";
-            c.fill();
-        }
-        c.strokeStyle="gray";
-        c.stroke();
+    get currentDecimalValue(){
+        var fractionOfRotation = this.rodTheta/(Math.PI * 2);
+        return Math.floor(this.totalValues * fractionOfRotation);
     }
 
-    drawAxle(c){
-        c.beginPath();
-        c.arc(this.center.x, this.center.y, this.axleRadius, 0, 2*Math.PI);
-        c.fillStyle = "white";
-        c.strokeStyle = "gray";
-        c.stroke();
-        c.fill();
-    }
-
-    drawRod(c){
-        var pt = polarToCartesian(this.radius, this.rodTheta);
-        c.beginPath();
-        c.moveTo(this.center.x, this.center.y);
-        c.lineTo(pt.x + this.center.x, pt.y + this.center.y);
-        c.strokeStyle = "red";
-        c.lineWidth = 8;
-        c.lineCap = "round";
-        c.stroke();
-        c.lineWidth = 1;
-    }
-
-    drawFullSlice(c, decNumber){
-        var bits = decNumber.bits(this.bitsize);   // converts number to string of bits
-        
-        for(var i=0; i<bits.length; i++){
-            this.drawPartOfSlice(c, decNumber, i, bits[i] == "1");
-            
-        }
-    }
-
-    draw(){
-        for(var i=0; i<this.totalValues; i++){
-            this.drawFullSlice(window.canvas.context,i);
-        }
-        this.drawAxle(window.canvas.context);
-        this.drawRod(window.canvas.context);
+    get currentBinaryValue(){
+        var fractionOfRotation = this.rodTheta/(Math.PI * 2);
+        return (Math.floor(this.totalValues * fractionOfRotation)).bits(this.bitsize);
     }
 
     changeBitSize(newbits){
-        window.canvas.context.clear();
+        canvas.context.clear();
         this.bitsize = newbits;
-        this.draw();
+        draw();
     }
 
+}
+
+function drawPartOfSlice(c, decNumber, bitPosition, shouldFill){
+    // c:           drawing context
+    // decNumber:   represented number in decimal format
+    // bitPosition: position of the bit
+    // shouldFill:  fill area with a color? true/false
+
+    var arcAngle = 2 * Math.PI / rotaryEncoder.totalValues;
+    
+    var innerArc = {
+        start: arcAngle * decNumber, 
+        end: arcAngle * (decNumber + 1), 
+        r: bitPosition/rotaryEncoder.bitsize * rotaryEncoder.radius 
+    };
+    
+    var outerArc = {
+        start: arcAngle * decNumber, 
+        end: arcAngle * (decNumber + 1), 
+        r: (bitPosition+1)/rotaryEncoder.bitsize * rotaryEncoder.radius 
+    };
+
+    c.beginPath();
+    c.arc(rotaryEncoder.center.x, rotaryEncoder.center.y, innerArc.r, innerArc.start, innerArc.end);
+    c.arc(rotaryEncoder.center.x, rotaryEncoder.center.y, outerArc.r, outerArc.end, outerArc.start, true);
+    var pt = polarToCartesian(innerArc.r, innerArc.start);
+    c.lineTo(pt.x + rotaryEncoder.center.x, pt.y + rotaryEncoder.center.y);
+    
+    if(shouldFill){
+        c.fillStyle = "black";
+        c.fill();
+    }
+    c.strokeStyle="gray";
+    c.stroke();
+}
+
+function drawAxle(c){
+    c.beginPath();
+    c.arc(rotaryEncoder.center.x, rotaryEncoder.center.y, rotaryEncoder.axleRadius, 0, 2*Math.PI);
+    c.fillStyle = "white";
+    c.strokeStyle = "gray";
+    c.stroke();
+    c.fill();
+}
+
+function drawRod(c){
+    var pt = polarToCartesian(rotaryEncoder.radius, rotaryEncoder.rodTheta);
+    c.beginPath();
+    c.moveTo(rotaryEncoder.center.x, rotaryEncoder.center.y);
+    c.lineTo(pt.x + rotaryEncoder.center.x, pt.y + rotaryEncoder.center.y);
+    c.strokeStyle = "red";
+    c.lineWidth = 8;
+    c.lineCap = "round";
+    c.stroke();
+    c.lineWidth = 1;
+}
+
+function drawFullSlice(c, decNumber){
+    var bits = decNumber.bits(rotaryEncoder.bitsize);   // converts number to string of bits
+    for(var i=0; i<bits.length; i++){
+        drawPartOfSlice(c, decNumber, i, bits[i] == "1");
+    }
+}
+
+function draw(){
+    canvas.context.clear();
+    for(var i=0; i<rotaryEncoder.totalValues; i++){
+        drawFullSlice(canvas.context,i);
+    }
+    drawAxle(canvas.context);
+    drawRod(canvas.context);
+    updateBinDecLabels();
+    rotaryEncoder.rodTheta = rotaryEncoder.rodTheta > 2*Math.PI - rotaryEncoder.d_theta ? 0 : rotaryEncoder.rodTheta + rotaryEncoder.d_theta;
 }
 
 function polarToCartesian(r, theta){
@@ -135,6 +149,8 @@ var increaseButton = document.getElementById("increaseButton");
 var bitCountLabel = document.getElementById("bitCountLabel");
 var totalValuesLabel = document.getElementById("totalValuesLabel");
 var angularResolutionLabel = document.getElementById("angularResolutionLabel");
+var currentBinaryValueLabel = document.getElementById("currentBinaryValueLabel");
+var currentDecimalValueLabel = document.getElementById("currentDecimalValueLabel");
 
 decreaseButton.onclick = function(){
     var newsize = window.rotaryEncoder.bitsize - 1;
@@ -151,8 +167,6 @@ increaseButton.onclick = function(){
     }
     updateUI(newsize);
 };
-
-
 
 function updateUI(bitsize){
 
@@ -183,10 +197,14 @@ function updateUI(bitsize){
 
 }
 
+function updateBinDecLabels(){
+    currentDecimalValueLabel.innerHTML = rotaryEncoder.currentDecimalValue;
+    currentBinaryValueLabel.innerHTML = rotaryEncoder.currentBinaryValue;
+}
 //////////////////////////////////////////////////////////////////
 
 var rotaryEncoder = new RotaryEncoder();
-rotaryEncoder.draw();
-// var timer = setInterval(rotaryEncoder.draw, rotaryEncoder.updateInterval);
+// rotaryEncoder.draw();
+var timer = setInterval(draw, rotaryEncoder.updateInterval);
 
 //////////////////////////////////////////////////////////////////
